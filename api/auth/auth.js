@@ -14,10 +14,16 @@ router.use(bodyParser.json());
 
 // Signup Route
 router.post('/signup', async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, username } = req.body; // Include username in the request
 
   try {
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { username }, // Save username in metadata
+      },
+    });
 
     if (error) {
       console.error('Supabase Signup Error:', error.message);
@@ -46,12 +52,16 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: error.message });
     }
 
-    const token = jwt.sign({ userId: data.user.id, email: data.user.email }, SECRET_KEY, {
+    // Fetch the username from user metadata
+    const username = data.user.user_metadata?.username || data.user.email.split('@')[0]; // Fallback to email prefix if no username
+
+    const token = jwt.sign({ userId: data.user.id, email: data.user.email, username }, SECRET_KEY, {
       expiresIn: '1h',
     });
 
     res.status(200).json({
       message: 'Login successful',
+      username, // Include username in the response
       user: data.user,
       token: token,
     });
@@ -69,3 +79,4 @@ router.get('/protected', (req, res) => {
 });
 
 module.exports = router;
+
