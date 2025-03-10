@@ -14,7 +14,7 @@ router.use(bodyParser.json());
 
 // Signup Route
 router.post('/signup', async (req, res) => {
-  const { email, password, username } = req.body; // Include username in the request
+  const { email, password, username } = req.body;
 
   try {
     const { data, error } = await supabase.auth.signUp({
@@ -53,7 +53,7 @@ router.post('/login', async (req, res) => {
     }
 
     // Fetch the username from user metadata
-    const username = data.user.user_metadata?.username || data.user.email.split('@')[0]; // Fallback to email prefix if no username
+    const username = data.user.user_metadata?.username || data.user.email.split('@')[0];
 
     const token = jwt.sign({ userId: data.user.id, email: data.user.email, username }, SECRET_KEY, {
       expiresIn: '1h',
@@ -61,12 +61,60 @@ router.post('/login', async (req, res) => {
 
     res.status(200).json({
       message: 'Login successful',
-      username, // Include username in the response
+      username,
       user: data.user,
-      token: token,
+      token,
     });
   } catch (err) {
     console.error('Unexpected Login Error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Feedback Routes
+
+// POST /feedback - Submit feedback
+router.post('/feedback', async (req, res) => {
+  const { user_id, username, feedback } = req.body; // Extract user and feedback details
+
+  try {
+    const { data, error } = await supabase
+      .from('feedbacks') // Replace 'feedbacks' with your table name
+      .insert([{ user_id, username, feedback }]);
+
+    if (error) {
+      console.error('Error inserting feedback:', error.message);
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.status(201).json({
+      message: 'Feedback submitted successfully',
+      feedback: data,
+    });
+  } catch (err) {
+    console.error('Unexpected Feedback Submission Error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /feedback - Fetch all feedback
+router.get('/feedback', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('feedbacks') // Replace 'feedbacks' with your table name
+      .select('*')
+      .order('created_at', { ascending: false }); // Sort by latest feedback
+
+    if (error) {
+      console.error('Error fetching feedback:', error.message);
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.status(200).json({
+      feedbacks: data,
+    });
+  } catch (err) {
+    console.error('Unexpected Feedback Fetch Error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -79,4 +127,3 @@ router.get('/protected', (req, res) => {
 });
 
 module.exports = router;
-
