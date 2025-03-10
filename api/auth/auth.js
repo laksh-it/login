@@ -78,9 +78,11 @@ router.post('/feedback', async (req, res) => {
   const { user_id, username, feedback } = req.body; // Extract user and feedback details
 
   try {
+    // Insert feedback into the database and fetch the inserted row
     const { data, error } = await supabase
-      .from('feedbacks') // Replace 'feedbacks' with your table name
-      .insert([{ user_id, username, feedback }]);
+      .from('feedbacks')
+      .insert([{ user_id, username, feedback }])
+      .select(); // Fetch the inserted row
 
     if (error) {
       console.error('Error inserting feedback:', error.message);
@@ -89,7 +91,7 @@ router.post('/feedback', async (req, res) => {
 
     res.status(201).json({
       message: 'Feedback submitted successfully',
-      feedback: data,
+      feedback: data[0], // Return the first inserted row
     });
   } catch (err) {
     console.error('Unexpected Feedback Submission Error:', err);
