@@ -8,7 +8,7 @@ app.use(
   cors({
     origin: [
       'http://localhost:3000', // Local frontend
-      'https://your-frontend-url.netlify.app', // Replace with your deployed frontend URL
+      'https://login-frontsite.netlify.app', // Replace with your deployed frontend URL
     ],
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type', 'Authorization'],
